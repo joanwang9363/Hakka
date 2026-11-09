@@ -66,9 +66,9 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center py-6 px-4">
+<body class="min-h-screen flex flex-col items-center py-4 px-3 sm:py-6 sm:px-4">
 
-    <div class="w-full max-w-lg w-full flex flex-col gap-6">
+    <div class="w-full max-w-lg flex flex-col gap-4 sm:gap-6">
         
         <!-- JOAN 的動態碎碎念區域 -->
         <div class="joan-bubble bg-pink-200 text-pink-800 text-xl font-bold py-4 px-6 rounded-2xl shadow-sm border-2 border-pink-300">
@@ -79,10 +79,10 @@
         <h1 class="text-3xl font-black text-slate-800 text-center tracking-wide">🌺 客家俗語與童謠接龍</h1>
 
         <!-- 進度指示器 -->
-        <div class="text-center mt-1 mb-1">
-            <span id="progress-badge" class="bg-pink-100 text-pink-700 font-bold py-1.5 px-5 rounded-full shadow-sm border border-pink-200 text-sm tracking-wide">
-                進度：第 1 題 / 共 40 題
-            </span>
+        <div class="text-center mt-0 mb-1">
+            <div id="progress-badge" class="inline-block bg-pink-500 text-white font-bold py-1.5 px-6 rounded-full shadow-md border-2 border-pink-200 text-sm sm:text-base tracking-widest">
+                🎯 進度：第 1 題 / 共 40 題
+            </div>
         </div>
 
         <!-- 題目區 -->
@@ -212,7 +212,7 @@
             const currentQ = shuffledQuestions[currentQuestionIndex];
             
             // 更新進度顯示
-            document.getElementById('progress-badge').innerText = `進度：第 ${currentQuestionIndex + 1} 題 / 共 ${shuffledQuestions.length} 題`;
+            document.getElementById('progress-badge').innerText = `🎯 進度：第 ${currentQuestionIndex + 1} 題 / 共 ${shuffledQuestions.length} 題`;
 
             // 設定題目文字
             document.getElementById('question-text').innerText = currentQ.qText;
