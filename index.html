@@ -78,6 +78,13 @@
 
         <h1 class="text-3xl font-black text-slate-800 text-center tracking-wide">🌺 客家俗語與童謠接龍</h1>
 
+        <!-- 進度指示器 -->
+        <div class="text-center mt-1 mb-1">
+            <span id="progress-badge" class="bg-pink-100 text-pink-700 font-bold py-1.5 px-5 rounded-full shadow-sm border border-pink-200 text-sm tracking-wide">
+                進度：第 1 題 / 共 40 題
+            </span>
+        </div>
+
         <!-- 題目區 -->
         <div class="bg-white rounded-3xl p-8 shadow-lg border-b-4 border-blue-200 text-center flex flex-col justify-center min-h-[200px]">
             <span class="text-sm font-bold text-blue-500 mb-2 tracking-widest">【 上半句 】</span>
@@ -107,6 +114,22 @@
             </div>
             <button onclick="nextQuestion()" class="w-full bg-pink-500 hover:bg-pink-600 text-white text-2xl font-bold py-4 px-6 rounded-2xl shadow-md transition-colors">
                 挑戰下一題 ➔
+            </button>
+        </div>
+    </div>
+
+    <!-- 最終過關頒獎視窗 -->
+    <div id="final-victory-modal" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex items-center justify-center hidden z-50 px-4 backdrop-blur-md">
+        <div class="bg-gradient-to-b from-yellow-50 to-orange-100 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border-4 border-yellow-400 transform scale-100 transition-transform">
+            <div class="text-7xl mb-4 animate-bounce">🏆</div>
+            <h2 class="text-3xl font-black text-orange-600 mb-2">恭喜完成全部挑戰！</h2>
+            <p class="text-lg text-slate-700 font-bold mb-4">您獲得了最高榮譽封號：</p>
+            <div class="bg-red-600 rounded-xl p-4 my-4 shadow-inner transform -rotate-3 border-2 border-red-800">
+                <p class="text-4xl font-black text-yellow-300 tracking-widest">客家活字典</p>
+            </div>
+            <p class="text-md text-slate-600 font-medium mb-6">太厲害了！連 JOAN 都佩服得五體投地！</p>
+            <button onclick="restartGame()" class="w-full bg-orange-500 hover:bg-orange-600 text-white text-2xl font-bold py-4 px-6 rounded-2xl shadow-md transition-colors">
+                重新挑戰 ➔
             </button>
         </div>
     </div>
@@ -188,6 +211,9 @@
         function loadQuestion() {
             const currentQ = shuffledQuestions[currentQuestionIndex];
             
+            // 更新進度顯示
+            document.getElementById('progress-badge').innerText = `進度：第 ${currentQuestionIndex + 1} 題 / 共 ${shuffledQuestions.length} 題`;
+
             // 設定題目文字
             document.getElementById('question-text').innerText = currentQ.qText;
             document.getElementById('question-hint').innerText = currentQ.qHint;
@@ -278,14 +304,36 @@
             
             currentQuestionIndex++;
             
-            // 如果題目做完了，就重新洗牌重來
+            // 如果題目做完了，顯示最終頒獎視窗
             if (currentQuestionIndex >= shuffledQuestions.length) {
-                currentQuestionIndex = 0;
-                shuffledQuestions = [...slangs].sort(() => Math.random() - 0.5);
-                document.getElementById('joan-msg').innerText = "太厲害了！全部都答對了，我們再來複習一次！";
+                showFinalVictoryModal();
+            } else {
+                loadQuestion();
             }
+        }
+
+        // 顯示最終頒獎視窗
+        function showFinalVictoryModal() {
+            const modal = document.getElementById('final-victory-modal');
+            modal.classList.remove('hidden');
             
-            loadQuestion();
+            const modalBox = modal.querySelector('.bg-gradient-to-b');
+            modalBox.classList.remove('animate-pop');
+            void modalBox.offsetWidth;
+            modalBox.classList.add('animate-pop');
+
+            // 連續噴發三次彩帶慶祝
+            fireConfetti();
+            setTimeout(fireConfetti, 1000);
+            setTimeout(fireConfetti, 2000);
+        }
+
+        // 重新開始遊戲
+        function restartGame() {
+            document.getElementById('final-victory-modal').classList.add('hidden');
+            initGame();
+            document.getElementById('joan-msg').innerText = "太厲害了！我們再來複習一次！";
+            document.getElementById('joan-msg').className = "text-xl font-bold mt-1 block text-pink-700";
         }
 
         // 彩帶動畫
