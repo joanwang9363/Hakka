@@ -75,19 +75,19 @@
             💬 JOAN說：<br>
             <span id="joan-msg" class="text-lg font-normal mt-1 block">來試試看這些客家老話您還記得幾句！</span>
         </div>
-
-        <h1 class="text-3xl font-black text-slate-800 text-center tracking-wide">🌺 客家俗語與童謠接龍</h1>
-
-        <!-- 進度指示器 -->
-        <div class="text-center mt-0 mb-1">
-            <div id="progress-badge" class="inline-block bg-pink-500 text-white font-bold py-1.5 px-6 rounded-full shadow-md border-2 border-pink-200 text-sm sm:text-base tracking-widest">
-                🎯 進度：第 1 題 / 共 40 題
-            </div>
-        </div>
+        <h1 class="text-3xl font-black text-slate-800 text-center tracking-wide mb-2">🌺 客家俗語與童謠接龍</h1>
 
         <!-- 題目區 -->
-        <div class="bg-white rounded-3xl p-8 shadow-lg border-b-4 border-blue-200 text-center flex flex-col justify-center min-h-[200px]">
-            <span class="text-sm font-bold text-blue-500 mb-2 tracking-widest">【 上半句 】</span>
+        <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-lg border-b-4 border-blue-200 text-center flex flex-col justify-center min-h-[200px] relative mt-5">
+            
+            <!-- 進度指示器 (改成釘在白色框框上方的立體標籤) -->
+            <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 w-full text-center">
+                <div id="progress-badge" class="inline-block bg-pink-500 text-white font-black py-1.5 px-6 rounded-full shadow-md border-4 border-white text-sm sm:text-base tracking-widest whitespace-nowrap">
+                    🎯 第 1 題 / 共 40 題
+                </div>
+            </div>
+
+            <span class="text-sm font-bold text-blue-500 mb-2 mt-3 tracking-widest">【 上半句 】</span>
             <h2 id="question-text" class="text-4xl sm:text-5xl font-black text-slate-800 mb-4 leading-tight">
                 <!-- 題目會產生在這裡 -->
             </h2>
@@ -212,7 +212,7 @@
             const currentQ = shuffledQuestions[currentQuestionIndex];
             
             // 更新進度顯示
-            document.getElementById('progress-badge').innerText = `🎯 進度：第 ${currentQuestionIndex + 1} 題 / 共 ${shuffledQuestions.length} 題`;
+            document.getElementById('progress-badge').innerText = `🎯 第 ${currentQuestionIndex + 1} 題 / 共 ${shuffledQuestions.length} 題`;
 
             // 設定題目文字
             document.getElementById('question-text').innerText = currentQ.qText;
