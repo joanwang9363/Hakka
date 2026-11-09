@@ -80,10 +80,13 @@
         <!-- 題目區 -->
         <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-lg border-b-4 border-blue-200 text-center flex flex-col justify-center min-h-[200px] relative mt-5">
             
-            <!-- 進度指示器 (改成釘在白色框框上方的立體標籤) -->
-            <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 w-full text-center">
-                <div id="progress-badge" class="inline-block bg-pink-500 text-white font-black py-1.5 px-6 rounded-full shadow-md border-4 border-white text-sm sm:text-base tracking-widest whitespace-nowrap">
+            <!-- 進度指示器與失誤計數 (並排顯示) -->
+            <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 w-full text-center flex justify-center gap-1 sm:gap-2 px-1">
+                <div id="progress-badge" class="inline-block bg-pink-500 text-white font-black py-1.5 px-3 sm:px-5 rounded-full shadow-md border-2 sm:border-4 border-white text-xs sm:text-base tracking-widest whitespace-nowrap">
                     🎯 第 1 題 / 共 40 題
+                </div>
+                <div id="error-badge" class="inline-block bg-orange-400 text-white font-black py-1.5 px-3 sm:px-5 rounded-full shadow-md border-2 sm:border-4 border-white text-xs sm:text-base tracking-widest whitespace-nowrap">
+                    ❌ 失誤: 0 次
                 </div>
             </div>
 
@@ -121,13 +124,13 @@
     <!-- 最終過關頒獎視窗 -->
     <div id="final-victory-modal" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex items-center justify-center hidden z-50 px-4 backdrop-blur-md">
         <div class="bg-gradient-to-b from-yellow-50 to-orange-100 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border-4 border-yellow-400 transform scale-100 transition-transform">
-            <div class="text-7xl mb-4 animate-bounce">🏆</div>
+            <div id="modal-final-icon" class="text-7xl mb-4 animate-bounce">🏆</div>
             <h2 class="text-3xl font-black text-orange-600 mb-2">恭喜完成全部挑戰！</h2>
-            <p class="text-lg text-slate-700 font-bold mb-4">您獲得了最高榮譽封號：</p>
+            <p class="text-lg text-slate-700 font-bold mb-4">您獲得了專屬榮譽封號：</p>
             <div class="bg-red-600 rounded-xl p-4 my-4 shadow-inner transform -rotate-3 border-2 border-red-800">
-                <p class="text-4xl font-black text-yellow-300 tracking-widest">客家活字典</p>
+                <p id="modal-final-title" class="text-4xl font-black text-yellow-300 tracking-widest">客家活字典</p>
             </div>
-            <p class="text-md text-slate-600 font-medium mb-6">太厲害了！連 JOAN 都佩服得五體投地！</p>
+            <p id="modal-final-desc" class="text-md text-slate-600 font-medium mb-6 leading-relaxed">太厲害了！連 JOAN 都佩服得五體投地！</p>
             <button onclick="restartGame()" class="w-full bg-orange-500 hover:bg-orange-600 text-white text-2xl font-bold py-4 px-6 rounded-2xl shadow-md transition-colors">
                 重新挑戰 ➔
             </button>
@@ -198,12 +201,15 @@
 
         let currentQuestionIndex = 0;
         let shuffledQuestions = [];
+        let errorCount = 0; // 新增：記錄錯誤次數
 
         // 初始化遊戲
         function initGame() {
             // 打亂題庫順序
             shuffledQuestions = [...slangs].sort(() => Math.random() - 0.5);
             currentQuestionIndex = 0;
+            errorCount = 0; // 重置錯誤次數
+            document.getElementById('error-badge').innerText = `❌ 失誤: 0 次`; // 新增：重置畫面上的失誤計數
             loadQuestion();
         }
 
@@ -263,6 +269,9 @@
                 showVictoryModal(questionData);
             } else {
                 // 答錯了
+                errorCount++; // 紀錄錯誤次數
+                document.getElementById('error-badge').innerText = `❌ 失誤: ${errorCount} 次`; // 新增：即時更新畫面上的失誤計數
+                
                 buttonElement.classList.remove('bg-white', 'hover:bg-blue-50');
                 buttonElement.classList.add('bg-slate-200', 'border-slate-300', 'opacity-50');
                 buttonElement.disabled = true; // 鎖住按錯的按鈕
@@ -317,6 +326,33 @@
             const modal = document.getElementById('final-victory-modal');
             modal.classList.remove('hidden');
             
+            // 根據錯誤次數決定稱號
+            let icon = '🏆';
+            let title = '客家活字典';
+            let desc = '';
+            
+            if (errorCount === 0) {
+                icon = '🏆';
+                title = '客家活字典';
+                desc = `完美通關！0 次失誤！<br>太神啦，連 JOAN 都佩服得五體投地！`;
+            } else if (errorCount <= 10) {
+                icon = '🥇';
+                title = '客庄大達人';
+                desc = `總共只猜錯 <span class="text-red-600 font-bold text-xl">${errorCount}</span> 次！<br>非常厲害，客家文化底子超深厚！`;
+            } else if (errorCount <= 25) {
+                icon = '🥈';
+                title = '熱心老鄉親';
+                desc = `總共猜錯 <span class="text-red-600 font-bold text-xl">${errorCount}</span> 次。<br>勾起很多回憶了吧！很棒很棒！`;
+            } else {
+                icon = '🥉';
+                title = '客家新朋友';
+                desc = `總共猜錯 <span class="text-red-600 font-bold text-xl">${errorCount}</span> 次。<br>學到老玩到老，下次挑戰一定會更好！`;
+            }
+
+            document.getElementById('modal-final-icon').innerText = icon;
+            document.getElementById('modal-final-title').innerText = title;
+            document.getElementById('modal-final-desc').innerHTML = desc;
+
             const modalBox = modal.querySelector('.bg-gradient-to-b');
             modalBox.classList.remove('animate-pop');
             void modalBox.offsetWidth;
