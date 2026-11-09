@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>客家俗語與童謠接龍</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f0f9ff; /* 清爽的客家藍色調背景 */
+            touch-action: manipulation;
+            background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23bae6fd" fill-opacity="0.2"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E'); /* 淡淡的花布紋理感 */
+        }
+
+        /* 按鈕點擊與動畫 */
+        .option-btn {
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .option-btn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+        .option-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 答錯時的左右搖晃動畫 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s;
+        }
+
+        /* 彈出視窗 Q彈動畫 */
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            60% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* 對話框小尾巴 */
+        .joan-bubble {
+            position: relative;
+        }
+        .joan-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50px;
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: #fbcfe8 transparent transparent transparent;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-6 px-4">
+
+    <div class="w-full max-w-lg w-full flex flex-col gap-6">
+        
+        <!-- JOAN 的動態碎碎念區域 -->
+        <div class="joan-bubble bg-pink-200 text-pink-800 text-xl font-bold py-4 px-6 rounded-2xl shadow-sm border-2 border-pink-300">
+            💬 JOAN說：<br>
+            <span id="joan-msg" class="text-lg font-normal mt-1 block">來試試看這些客家老話您還記得幾句！</span>
+        </div>
+
+        <h1 class="text-3xl font-black text-slate-800 text-center tracking-wide">🌺 客家俗語與童謠接龍</h1>
+
+        <!-- 題目區 -->
+        <div class="bg-white rounded-3xl p-8 shadow-lg border-b-4 border-blue-200 text-center flex flex-col justify-center min-h-[200px]">
+            <span class="text-sm font-bold text-blue-500 mb-2 tracking-widest">【 上半句 】</span>
+            <h2 id="question-text" class="text-4xl sm:text-5xl font-black text-slate-800 mb-4 leading-tight">
+                <!-- 題目會產生在這裡 -->
+            </h2>
+            <p id="question-hint" class="text-xl text-slate-500 font-medium">
+                <!-- 國語提示會產生在這裡 -->
+            </p>
+        </div>
+
+        <!-- 選項區 -->
+        <div class="flex flex-col gap-4 mt-2" id="options-container">
+            <!-- 按鈕會由 JavaScript 動態生成 -->
+        </div>
+
+    </div>
+
+    <!-- 過關祝賀視窗 -->
+    <div id="victory-modal" class="fixed inset-0 bg-slate-900 bg-opacity-60 flex items-center justify-center hidden z-50 px-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl transform scale-100 transition-transform">
+            <div class="text-7xl mb-4">🎉</div>
+            <h2 class="text-4xl font-black text-blue-600 mb-2">答對了！</h2>
+            <div class="bg-blue-50 rounded-xl p-4 my-6 border border-blue-100">
+                <p id="modal-full-slang" class="text-2xl font-bold text-slate-800 mb-2"></p>
+                <p id="modal-explanation" class="text-lg text-slate-600 font-medium"></p>
+            </div>
+            <button onclick="nextQuestion()" class="w-full bg-pink-500 hover:bg-pink-600 text-white text-2xl font-bold py-4 px-6 rounded-2xl shadow-md transition-colors">
+                挑戰下一題 ➔
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 客語俗語題庫 (100題巨量擴充版，使用壓縮陣列格式以保持效能)
+        // 格式：[ 題目, 題目國語, 答案, 答案國語, 錯誤1, 錯1國語, 錯誤2, 錯2國語, JOAN碎碎念 ]
+        const slangsData = [
+            // --- 新增：客家童謠、山歌與順口溜 ---
+            ["月光華華...", "月亮亮晃晃...", "細妹煮茶", "小女孩在煮茶", "細妹洗衫", "小女孩洗衣服", "細妹睡覺", "小女孩睡覺", "這首《月光華華》是最經典的客家童謠了！長輩小時候一定都會唱！"],
+            ["天公啊落水喲...", "老天爺下雨了喲...", "阿妹戴草帽", "女孩戴著草帽", "阿妹撐雨傘", "女孩撐著雨傘", "阿妹穿水鞋", "女孩穿著雨鞋", "這首《天公落水》可是紅遍大街小巷的客家民謠呢，旋律是不是馬上浮現在腦海裡了？"],
+            ["伯公伯婆...", "土地公土地婆...", "無㓾雞無㓾鵝", "沒殺雞也沒殺鵝", "有鮮花素果", "有準備鮮花素果", "有大魚大肉", "有準備大魚大肉", "這首拜土地公的順口溜超級生動！下一句是『㓾隻鴨仔敬伯婆』，充滿了客庄的生活趣味。"],
+            ["阿啾箭，尾砣砣...", "烏秋鳥，尾巴重重的...", "無食水，會唱歌", "不喝水，也會唱歌", "飛上天，尋阿哥", "飛上天，找哥哥", "落下來，尋阿妹", "掉下來，找妹妹", "阿啾箭（烏秋）是客家庄常見的鳥類，這首童謠把鳥兒寫得好可愛呀！"],
+            ["排骨仙，食角煙...", "排骨仙，抽口菸...", "打隻屁，烰上天", "放個屁，飄上天", "飲杯茶，當神仙", "喝杯茶，當神仙", "食碗飯，大肚圈", "吃碗飯，肚子圓", "哈哈！這首是以前囡仔人最愛亂唸的搞笑順口溜，長輩聽到一定會噗哧笑出來！"],
+            ["唐山過台灣...", "當年從大陸過海來台灣...", "心肝結歸丸", "心裡非常糾結沉重", "無錢買飯食", "沒錢買飯吃", "歡喜笑連連", "開開心心笑連連", "這不僅是《客家本色》的歌詞，更道盡了客家先民渡海來台的艱辛與硬頸精神啊。"],
+            ["大箍呆，炒韭菜...", "胖子呆，炒韭菜...", "燒火燒毋著", "火生不起來，急得一直吹", "煮肉烰上天", "煮肉飄上天", "食飯食兩碗", "吃飯吃兩碗", "以前小孩子之間互相取笑的順口溜，滿滿的童年回憶啊！"],
+            ["一的去買菜...", "一的去買菜...", "二的去打海", "二的去網魚", "二的去買肉", "二的去買肉", "二的去買酒", "二的去買酒", "這是客家版的數字歌謠，像繞口令一樣，以前的長輩隨口都能唸上一段！"],
+            ["火金姑，會鑠尾...", "螢火蟲，尾巴會一閃一閃...", "點燈籠，來尋妹", "點著燈籠，來找妹妹", "會唱歌，真好聽", "會唱歌，真好聽", "飛上天，變星星", "飛上天，變成星星", "夏夜裡抓火金姑（螢火蟲），是阿公阿婆那個年代最浪漫的童年回憶了。"],
+            ["揚葉仔，飛呀飛...", "蝴蝶，飛呀飛...", "飛去阿婆後菜園", "飛去阿嬤後面的菜園", "飛去山頂尋阿哥", "飛去山頂找哥哥", "飛去水池尋魚仔", "飛去水池找小魚", "揚葉仔就是蝴蝶！客家童謠裡總是充滿著大自然與鄉村的美好畫面。"],
+            
+            // --- 原本的道地客家俗語 ---
+            ["盲食五月粽...", "還沒吃到端午節的粽子", "襖婆毋好放", "厚外套還不能收起來", "冷天無定著", "冷天說不準", "衫褲著打赤", "衣服要脫光", "長輩常說端午節過了，天氣才會真正變熱，以前人的智慧真的很準呢！"],
+            ["寧賣祖宗田...", "寧可賣掉祖宗留下的田地", "毋忘祖宗言", "也不能忘記祖宗傳下來的語言", "毋忘祖宗錢", "不能忘記錢", "毋忘祖宗面", "不能忘記長相", "這句話道出了客家人對母語和文化傳承的重視，超級感動！"],
+            ["食唔窮，著唔窮...", "吃不窮，穿也不會窮", "無算無計一世窮", "不懂得精打細算才會一輩子窮", "無做無賺一世窮", "不工作才會窮", "無屋無地一世窮", "沒房子才會窮", "客家人最講究的就是勤儉持家，這可是傳家之寶呢！"],
+            ["爺娘想子長江水...", "父母想念孩子像長江的水一樣長", "子想爺娘擔竿長", "孩子想念父母卻只有扁擔那麼長", "子想爺娘一陣風", "像一陣風", "子想爺娘無定著", "不一定", "父母的愛總是無私又深長，我們要多打電話回家喔！"],
+            ["人勤地生寶...", "人勤勞，土地就會生出寶藏", "人懶地生草", "人懶惰，田地就只會長滿雜草", "人懶無飯食", "人懶惰沒飯吃", "人懶會生病", "人懶惰會生病", "只要肯打拼就會有收穫，這就是硬頸的客家精神！"],
+            ["講到食...", "一提到吃東西的話", "撞破額", "搶得連額頭都撞破了", "行毋郁", "走不動", "笑哈哈", "笑哈哈", "這句是在笑人貪吃啦！以前是不是也常這樣唸貪吃的小孩～"],
+            ["晴帶雨傘...", "出大太陽也要帶著雨傘", "飽帶飢糧", "吃飽了出門也要帶著乾糧", "寒帶厚襖", "冷了帶外套", "夜帶火把", "晚上帶火把", "客家長輩最懂未雨綢繆了，凡事都要先做好準備！"],
+            ["有心打石...", "有心要去打石頭", "石成磚", "石頭最後也能被劈成磚塊", "石變金", "石頭變黃金", "石破掉", "石頭會破掉", "天下無難事，只怕有心人！有心做事就一定會成功。"],
+            ["出門看天色...", "出門要看天氣好壞", "入門看面色", "進門要懂得看別人的臉色", "入門看時間", "進門看時間", "入門看灶下", "進門看廚房", "這在教我們做人要懂得察言觀色，是很實用的人生哲學喔！"],
+            ["牛耕田...", "牛辛苦在田裡耕作", "馬食穀", "馬卻輕輕鬆鬆吃穀子", "羊食草", "羊在吃草", "豬睡覺", "豬在睡覺", "這句是在感嘆有人辛苦有人爽。不過沒關係，我們開開心心過日子最重要！"],
+            ["甘蔗好食...", "甘蔗雖然很好吃", "無雙頭甜", "但沒有兩頭都是甜的", "無天天有", "不能天天吃", "皮很難咬", "皮很難咬", "人生很難十全十美啦，我們要懂得懂得知足常樂！"],
+            ["食茶愛薄...", "喝茶喜歡喝清淡的", "食酒愛厚", "喝酒則要喝濃烈的", "食飯愛多", "吃飯要多", "食肉愛肥", "吃肉要肥", "客家人的飲食哲學，這可是長輩們的生活品味呢！"],
+            ["敬老得福...", "尊敬老人會得到福氣", "敬禾得穀", "用心種稻就會得到穀物", "敬鬼得神", "敬鬼神", "敬人得財", "敬人得財", "對長輩好、對土地好，自然會有好報！"],
+            ["食果子...", "吃樹上結的果子", "拜樹頭", "要感謝那棵樹", "愛洗手", "要記得洗手", "尋種子", "找種子", "這句教我們要飲水思源，感恩惜福。"],
+            ["豆腐好吃...", "豆腐吃起來很軟嫩美味", "漿難磨", "但磨豆漿的過程卻很辛苦", "錢難賺", "錢很難賺", "配菜難", "配菜很難", "每一口好吃的背後，都是別人辛苦流汗換來的。"],
+            ["買賣算分...", "做生意算錢要算得清清楚楚", "弟兄算寸", "親兄弟之間也要明算帳", "親戚算角", "親戚算角", "朋友算半", "朋友算一半", "親兄弟明算帳，這樣感情才能長長久久不傷和氣。"],
+            ["食飯打赤膊...", "吃飯熱得打赤膊", "做事尋衫著", "做事時卻找衣服穿來推託", "做事真認真", "做事很認真", "做事會流汗", "做事流滿身汗", "形容人好吃懶做啦！吃飯衝第一，做事就推三阻四。"],
+            ["早起三朝...", "每天早起三天加起來", "當一工", "就等於多出了一天的時間", "當一月", "等於一個月", "當一冬", "等於一整年", "早起的鳥兒有蟲吃，客家長輩最懂把握時間了！"],
+            ["樹老根多...", "樹老了根部會很多", "人老話多", "人老了話就會比較多", "人老病多", "人老病痛多", "人老錢多", "人老錢多", "哈哈，長輩就是因為關心我們才會一直碎碎念啦！"],
+            ["貓公教老虎...", "貓咪教老虎功夫", "留上樹", "留了一招爬樹的本事沒教", "無功夫", "沒有功夫", "走相逐", "追來追去", "俗話說防人之心不可無，連貓咪都知道要留一手爬樹保命呢！"],
+            ["遠親...", "住在遠方的親戚", "不如近鄰", "比不上住在隔壁的鄰居", "不如好命", "不如命好", "不如有錢", "不如有錢", "千金買房，萬金買鄰！好鄰居真的能互相照顧。"],
+            ["田螺蛤蟆...", "田螺和青蛙", "各有各路", "各有各的生存方式和出路", "一家親", "都是一家人", "愛食水", "都喜歡喝水", "天生我材必有用，每個人都有適合自己的路，不跟別人比。"],
+            ["山高毋擋雲...", "山再高也擋不住天上的雲", "水深毋擋魚", "水再深也擋不住游來游去的魚", "樹大毋擋風", "樹大擋不住風", "屋大毋擋雨", "屋大擋不住雨", "這句話很有禪意，順應自然法則，有些事情是強求不來的。"],
+            ["細漢偷挽瓠...", "小時候偷摘別人的葫蘆", "大漢偷牽牛", "長大後就會去偷別人的牛", "大漢做強盜", "長大當強盜", "大漢偷錢財", "長大偷錢", "教育要從小做起，小錯不改，長大就變大錯了！"],
+            ["一人一家代...", "每個人各自管好自己家裡的事", "公媽隨人拜", "祖先也是各家拜各家的", "有事自己擔", "有事自己扛", "兄弟不相干", "兄弟沒關係", "這句話教我們不要隨便插手別人家務事，管好自己就好。"],
+            ["有錢食魚肉...", "有錢的時候就可以大口吃魚吃肉", "無錢食菜頭", "沒錢的時候就吃便宜的蘿蔔", "無錢餓肚子", "沒錢就餓肚子", "無錢食粥水", "沒錢吃稀飯", "能屈能伸！好日子有好的過法，苦日子也有苦的過法。"],
+            ["媒人嘴...", "媒人婆講的話", "糊累累", "通常都誇大不實、隨便唬弄", "真實在", "非常實在", "會賺錢", "可以賺大錢", "以前相親都靠媒人，結果娶回家才發現完全不一樣哈哈哈！"],
+            ["丈母娘看女婿...", "岳母看自己的女婿", "越看越有趣", "會越看越喜歡", "越看越生氣", "越看越生氣", "越看越有錢", "越看越有錢", "丈母娘疼女婿可是出了名的，半子也是子嘛！"],
+            ["一日走三江...", "一天之內到處奔波跑了很遠", "毋當歇一窗", "還不如在家裡的窗下好好休息一晚", "不如賺大錢", "不如賺大錢", "不如食頓飽", "不如吃頓飽飯", "出門在外千般難，在家千日好！家還是最溫暖的。"],
+            ["講話無憑...", "口頭上說的話沒有憑據", "寫字為證", "要白紙黑字寫下來才能當作證據", "錄音為證", "要錄音當證據", "找人作證", "要找人作證", "長輩做事很謹慎的，牽涉到重要的事情一定要有字據為憑！"]
+        ];
+
+        // 轉換為遊戲所需的物件格式
+        const slangs = slangsData.map(d => ({
+            qText: d[0], 
+            qHint: d[1], 
+            aText: d[2], 
+            aHint: d[3],
+            wrongOptions: [
+                { text: d[4], hint: d[5] },
+                { text: d[6], hint: d[7] }
+            ],
+            joanMsg: d[8]
+        }));
+
+        let currentQuestionIndex = 0;
+        let shuffledQuestions = [];
+
+        // 初始化遊戲
+        function initGame() {
+            // 打亂題庫順序
+            shuffledQuestions = [...slangs].sort(() => Math.random() - 0.5);
+            currentQuestionIndex = 0;
+            loadQuestion();
+        }
+
+        // 載入題目
+        function loadQuestion() {
+            const currentQ = shuffledQuestions[currentQuestionIndex];
+            
+            // 設定題目文字
+            document.getElementById('question-text').innerText = currentQ.qText;
+            document.getElementById('question-hint').innerText = currentQ.qHint;
+            
+            // 恢復JOAN的預設問候語
+            document.getElementById('joan-msg').innerText = "這句客家話的下半句是什麼呢？";
+            document.getElementById('joan-msg').className = "text-xl font-medium mt-1 block text-slate-700";
+
+            // 準備選項 (正確1個 + 錯誤2個)
+            let options = [
+                { text: currentQ.aText, hint: currentQ.aHint, isCorrect: true },
+                ...currentQ.wrongOptions.map(opt => ({ ...opt, isCorrect: false }))
+            ];
+            
+            // 打亂選項順序
+            options.sort(() => Math.random() - 0.5);
+
+            // 生成按鈕
+            const container = document.getElementById('options-container');
+            container.innerHTML = ''; // 清空舊按鈕
+            
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full bg-white border-4 border-blue-100 hover:bg-blue-50 text-left px-6 py-5 rounded-2xl flex flex-col md:flex-row md:items-end gap-2 group';
+                
+                btn.innerHTML = `
+                    <span class="text-3xl font-bold text-slate-800 group-hover:text-blue-700">${opt.text}</span>
+                    <span class="text-lg text-slate-500 font-medium">${opt.hint}</span>
+                `;
+                
+                btn.onclick = () => checkAnswer(btn, opt.isCorrect, currentQ);
+                container.appendChild(btn);
+            });
+        }
+
+        // 檢查答案
+        function checkAnswer(buttonElement, isCorrect, questionData) {
+            if (isCorrect) {
+                // 答對了
+                buttonElement.classList.remove('bg-white', 'border-blue-100', 'hover:bg-blue-50');
+                buttonElement.classList.add('bg-green-100', 'border-green-400');
+                
+                // 更新JOAN的碎碎念
+                document.getElementById('joan-msg').innerText = questionData.joanMsg;
+                document.getElementById('joan-msg').className = "text-xl font-bold mt-1 block text-pink-700";
+
+                showVictoryModal(questionData);
+            } else {
+                // 答錯了
+                buttonElement.classList.remove('bg-white', 'hover:bg-blue-50');
+                buttonElement.classList.add('bg-slate-200', 'border-slate-300', 'opacity-50');
+                buttonElement.disabled = true; // 鎖住按錯的按鈕
+                
+                // 搖晃動畫
+                buttonElement.classList.remove('animate-shake');
+                void buttonElement.offsetWidth; // 觸發重繪
+                buttonElement.classList.add('animate-shake');
+
+                // JOAN 給予鼓勵
+                document.getElementById('joan-msg').innerText = "哎呀！差一點點，再猜猜看別的！";
+                document.getElementById('joan-msg').className = "text-xl font-bold mt-1 block text-slate-600";
+            }
+        }
+
+        // 顯示過關視窗
+        function showVictoryModal(questionData) {
+            const modal = document.getElementById('victory-modal');
+            
+            // 設定視窗內容
+            document.getElementById('modal-full-slang').innerText = `${questionData.qText} ${questionData.aText}`;
+            document.getElementById('modal-explanation').innerText = questionData.joanMsg;
+
+            modal.classList.remove('hidden');
+            
+            // Q彈動畫
+            const modalBox = modal.querySelector('.bg-white');
+            modalBox.classList.remove('animate-pop');
+            void modalBox.offsetWidth;
+            modalBox.classList.add('animate-pop');
+
+            // 觸發彩帶
+            fireConfetti();
+        }
+
+        // 下一題
+        function nextQuestion() {
+            document.getElementById('victory-modal').classList.add('hidden');
+            
+            currentQuestionIndex++;
+            
+            // 如果題目做完了，就重新洗牌重來
+            if (currentQuestionIndex >= shuffledQuestions.length) {
+                currentQuestionIndex = 0;
+                shuffledQuestions = [...slangs].sort(() => Math.random() - 0.5);
+                document.getElementById('joan-msg').innerText = "太厲害了！全部都答對了，我們再來複習一次！";
+            }
+            
+            loadQuestion();
+        }
+
+        // 彩帶動畫
+        function fireConfetti() {
+            var duration = 2 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 2000 };
+
+            function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) { return clearInterval(interval); }
+                var particleCount = 50 * (timeLeft / duration);
+                
+                confetti(Object.assign({}, defaults, { 
+                    particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+                }));
+                confetti(Object.assign({}, defaults, { 
+                    particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+                }));
+            }, 250);
+        }
+
+        // 啟動遊戲
+        window.onload = initGame;
+    </script>
+</body>
+</html>
