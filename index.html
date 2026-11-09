@@ -203,6 +203,26 @@
         let shuffledQuestions = [];
         let errorCount = 0; // 新增：記錄錯誤次數
 
+        // JOAN 的隨機題問語錄
+        const joanPrompts = [
+            "這句客家話的下半句是什麼呢？",
+            "這句超經典！您知道下半句是什麼嗎？",
+            "接下來這題，考考您的記憶力喔！",
+            "這題有點挑戰喔，仔細想想看！",
+            "哇，這句老一輩常講！下半句是？",
+            "猜猜看，這句話接下去怎麼說？",
+            "動動腦時間！您還記得這句話嗎？"
+        ];
+
+        // JOAN 的隨機安慰語錄 (答錯時)
+        const joanEncouragements = [
+            "哎呀！差一點點，再猜猜看別的！",
+            "不對喔～沒關係，我們再試一次！",
+            "喔喔！好像不是這個，再想想看？",
+            "稍微可惜了一點，還有其他選項喔！",
+            "沒選中呢，換一個答案試試看吧！"
+        ];
+
         // 初始化遊戲
         function initGame() {
             // 打亂題庫順序
@@ -224,8 +244,9 @@
             document.getElementById('question-text').innerText = currentQ.qText;
             document.getElementById('question-hint').innerText = currentQ.qHint;
             
-            // 恢復JOAN的預設問候語
-            document.getElementById('joan-msg').innerText = "這句客家話的下半句是什麼呢？";
+            // 隨機挑選一句 JOAN 的提示語
+            const randomPrompt = joanPrompts[Math.floor(Math.random() * joanPrompts.length)];
+            document.getElementById('joan-msg').innerText = randomPrompt;
             document.getElementById('joan-msg').className = "text-xl font-medium mt-1 block text-slate-700";
 
             // 準備選項 (正確1個 + 錯誤2個)
@@ -281,8 +302,9 @@
                 void buttonElement.offsetWidth; // 觸發重繪
                 buttonElement.classList.add('animate-shake');
 
-                // JOAN 給予鼓勵
-                document.getElementById('joan-msg').innerText = "哎呀！差一點點，再猜猜看別的！";
+                // JOAN 給予隨機鼓勵
+                const randomEncourage = joanEncouragements[Math.floor(Math.random() * joanEncouragements.length)];
+                document.getElementById('joan-msg').innerText = randomEncourage;
                 document.getElementById('joan-msg').className = "text-xl font-bold mt-1 block text-slate-600";
             }
         }
